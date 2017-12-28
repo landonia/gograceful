@@ -1,4 +1,4 @@
-# gonet
+# gograceful
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/landonia/gograceful)](https://goreportcard.com/report/github.com/landonia/gograceful)
 [![GoDoc](https://godoc.org/github.com/landonia/gograceful?status.svg)](https://godoc.org/github.com/landonia/gograceful)
