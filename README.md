@@ -3,7 +3,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/landonia/gograceful)](https://goreportcard.com/report/github.com/landonia/gograceful)
 [![GoDoc](https://godoc.org/github.com/landonia/gograceful?status.svg)](https://godoc.org/github.com/landonia/gograceful)
 
-Allows you to gracefully shutdown HTTP connections as opposed to cutting them dead.
+Allows you to gracefully restart applications by spawning a new process and gracefully handing off the connections.
 
 ## Overview
 
