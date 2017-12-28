@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	// ADDR the local address to bind to
 	ADDR = ":8081"
 )
 
