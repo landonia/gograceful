@@ -5,17 +5,13 @@ import (
 	"time"
 
 	"github.com/landonia/gograceful"
-	"github.com/landonia/golog"
+	"github.com/landonia/golog/zerolog"
 	"github.com/landonia/util"
 )
 
 const (
 	// ADDR the local address to bind to
 	ADDR = ":8081"
-)
-
-var (
-	log = golog.NewPrettyZeroLogger("graceful.demo")
 )
 
 // An example of setting up a gograceful app
@@ -27,10 +23,14 @@ var (
 // Once running, you then need to issue a `kill -SIGUSR2 {process_id}` for it
 // to gracefully spin up a new process and then shutdown.
 func main() {
+	log, err := zerolog.New()
+	if err != nil {
+		panic(err)
+	}
 	uuid := util.GenerateUUID()
 
 	// Create a new gograceful instance to track the services
-	gg, err := gograceful.New(1)
+	gg, err := gograceful.New(gograceful.WithServiceCount(1), gograceful.WithLogger(log))
 	if err != nil {
 		log.Fatal("Could not create new graceful state... %s", err.Error())
 	}

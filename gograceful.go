@@ -18,10 +18,6 @@ import (
 	"github.com/landonia/golog"
 )
 
-var (
-	log = golog.NewZeroLogger("gograceful")
-)
-
 // Don't make the caller import syscall.
 const (
 	SIGINT  = syscall.SIGINT
@@ -48,6 +44,9 @@ type Graceful struct {
 	// Only load the inherited listeners once
 	inheritOnce sync.Once
 
+	// The log to use
+	log golog.Logger
+
 	// The error that is returned from the interit method
 	inheritOnceError error
 
@@ -66,10 +65,35 @@ type Graceful struct {
 	fdStart int
 }
 
+// WithConfiguration defines a function type to configure Graceful
+type WithConfiguration func(*Graceful) error
+
+// WithServiceCount will configure Graceful with the number of services that
+// will initialise before it is ready (see #Ready())
+func WithServiceCount(services int) WithConfiguration {
+	return func(gf *Graceful) error {
+		return gf.SetServiceCount(services)
+	}
+}
+
+// WithLogger will override the logger
+func WithLogger(log golog.Logger) WithConfiguration {
+	return func(gf *Graceful) error {
+		gf.log = log
+		return nil
+	}
+}
+
 // New will create a new Graceful wrapper. Note only one is expected per application
-func New(serviceCount int) (gf *Graceful, err error) {
-	gf = &Graceful{}
-	err = gf.SetServiceCount(serviceCount)
+func New(withConfs ...WithConfiguration) (gf *Graceful, err error) {
+	gf = &Graceful{log: &golog.EmptyLogger{}}
+
+	// Add the WithConfiguration functions
+	for _, withConf := range withConfs {
+		if err = withConf(gf); err != nil {
+			return
+		}
+	}
 	return
 }
 
@@ -349,7 +373,7 @@ func (gf *Graceful) Ready() error {
 
 	// Kill the parent process
 	go syscall.Wait4(pid, nil, 0, nil)
-	log.Trace("Sending signal %s to process %d", syscall.SIGINT, pid)
+	gf.log.Trace("Sending signal %s to process %d", syscall.SIGINT, pid)
 	return syscall.Kill(pid, syscall.SIGINT)
 }
 
@@ -369,23 +393,22 @@ func (gf *Graceful) Wait() error {
 
 		// We have received the signal to shutdown
 		case syscall.SIGINT, syscall.SIGTERM:
-			log.Trace("Sig: Shutdown: %d", syscall.Getpid())
+			gf.log.Trace("Sig: Shutdown: %d", syscall.Getpid())
 			return nil
 
 		// The SIGUSR2 means we should start the new process
 		// When the new process calls ready it will send
 		// a SIGINT to the new process
 		case syscall.SIGUSR2:
-			log.Trace("Sig: Restart: %d", syscall.Getpid())
+			gf.log.Trace("Sig: Restart: %d", syscall.Getpid())
 			if !forked {
 				newPID, err := gf.restart()
 				if err != nil {
 					return err
 				}
-				log.Trace("Started new PID: %d", newPID)
+				gf.log.Trace("Started new PID: %d", newPID)
 				forked = true
 			}
-
 		}
 	}
 }
